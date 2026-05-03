@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunshine Child · Label Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sun: #F5C842;
+    --sun-deep: #C9952A;
+    --ink: #1A1714;
+    --paper: #FAF7F2;
+    --paper-mid: #F0EBE2;
+    --paper-dark: #E0D9CE;
+    --muted: #8A8178;
+    --success: #3D8A5C;
+    --danger: #C0402A;
+    --radius: 6px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--sun);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-mark svg { width: 20px; height: 20px; }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-left: auto;
+    font-weight: 300;
+  }
+
+  main {
+    flex: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 48px 24px 64px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+
+  .page-sub {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 36px;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    border: 1px solid var(--paper-dark);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: white;
+  }
+
+  .step {
+    flex: 1;
+    padding: 16px 20px;
+    border-right: 1px solid var(--paper-dark);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .step:last-child { border-right: none; }
+
+  .step-n {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--sun);
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .step-desc { font-size: 12px; color: var(--muted); line-height: 1.5; font-weight: 300; }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 1.5px dashed var(--paper-dark);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--sun-deep);
+    background: #FFFBF0;
+  }
+
+  .drop-zone.loaded {
+    border-style: solid;
+    border-color: var(--success);
+    background: #F0FAF4;
+    padding: 24px;
+  }
+
+  .drop-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 14px;
+    background: var(--paper-mid);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .drop-icon svg { width: 22px; height: 22px; stroke: var(--muted); }
+
+  .drop-title { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+  .drop-sub { font-size: 13px; color: var(--muted); }
+  .drop-link { color: var(--sun-deep); text-decoration: underline; cursor: pointer; }
+
+  /* Mapping */
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .mapping-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .map-field {
+    background: white;
+    border: 1px solid var(--paper-dark);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .map-field label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .map-field select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8178' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0 center;
+    padding-right: 16px;
+    width: 100%;
+  }
+
+  /* Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .stat {
+    background: white;
+    border: 1px solid var(--paper-dark);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .stat-n { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--ink); line-height: 1; margin-bottom: 4px; }
+  .stat-l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Preview */
+  .preview-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 28px;
+  }
+
+  .addr-card {
+    background: white;
+    border: 1px solid var(--paper-dark);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .addr-order {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .addr-name { font-weight: 500; }
+
+  /* Warning */
+  .warn {
+    background: #FEF5F3;
+    border: 1px solid #F5C8BE;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--danger);
+    margin-bottom: 16px;
+  }
+
+  /* Generate button */
+  .generate-btn {
+    width: 100%;
+    padding: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    letter-spacing: -0.1px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .generate-btn:hover { background: #2E2A26; transform: translateY(-1px); }
+  .generate-btn:active { transform: translateY(0); }
+  .generate-btn svg { width: 18px; height: 18px; stroke: var(--sun); }
+
+  .generate-btn:disabled { background: var(--paper-dark); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: var(--paper-dark);
+    background: var(--ink);
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 14px 20px; }
+    main { padding: 28px 16px 48px; }
+    .steps { flex-direction: column; }
+    .step { border-right: none; border-bottom: 1px solid var(--paper-dark); }
+    .step:last-child { border-bottom: none; }
+    .mapping-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="4" fill="#1A1714"/>
+      <line x1="12" y1="2" x2="12" y2="6" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="12" y1="18" x2="12" y2="22" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="2" y1="12" x2="6" y2="12" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18" y1="12" x2="22" y2="12" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="19.07" y1="4.93" x2="16.24" y2="7.76" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+      <line x1="7.76" y1="16.24" x2="4.93" y2="19.07" stroke="#1A1714" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <span class="logo-text">Sunshine Child</span>
+  <span class="logo-sub">Label Generator</span>
+</header>
+
+<main>
+  <h1 class="page-title">Shipping Label Generator</h1>
+  <p class="page-sub">Export orders from Squarespace, drop the CSV below, and download a print-ready PDF for your Jadens thermal printer.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div>
+        <div class="step-title">Export from Squarespace</div>
+        <div class="step-desc">Commerce → Orders → Export → CSV</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div>
+        <div class="step-title">Drop CSV here</div>
+        <div class="step-desc">Columns auto-detected</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div>
+        <div class="step-title">Download & print</div>
+        <div class="step-desc">One label per page, 100×150mm</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-input').click()">
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/>
+        <polyline points="9,15 12,12 15,15"/>
+      </svg>
+    </div>
+    <div class="drop-title">Drop your CSV file here</div>
+    <div class="drop-sub">or <span class="drop-link">browse to select a file</span></div>
+    <input type="file" id="csv-input" accept=".csv" style="display:none">
+  </div>
+
+  <!-- Mapping -->
+  <div id="mapping-section" class="hidden">
+    <div class="section-label">Column mapping</div>
+    <div class="mapping-grid">
+      <div class="map-field"><label>Recipient name</label><select id="col-name"></select></div>
+      <div class="map-field"><label>Address line 1</label><select id="col-addr1"></select></div>
+      <div class="map-field"><label>Address line 2 (optional)</label><select id="col-addr2"></select></div>
+      <div class="map-field"><label>City / Town</label><select id="col-city"></select></div>
+      <div class="map-field"><label>County / State</label><select id="col-state"></select></div>
+      <div class="map-field"><label>Postcode / ZIP</label><select id="col-zip"></select></div>
+      <div class="map-field"><label>Country</label><select id="col-country"></select></div>
+      <div class="map-field"><label>Order number (optional)</label><select id="col-order"></select></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div id="stats-section" class="hidden">
+    <div class="section-label">Summary</div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-n" id="stat-orders">—</div><div class="stat-l">Orders</div></div>
+      <div class="stat"><div class="stat-n" id="stat-labels">—</div><div class="stat-l">Labels</div></div>
+      <div class="stat"><div class="stat-n" id="stat-skipped">—</div><div class="stat-l">Skipped</div></div>
+    </div>
+  </div>
+
+  <!-- Warning -->
+  <div id="warn-box" class="hidden warn"></div>
+
+  <!-- Preview -->
+  <div id="preview-section" class="hidden">
+    <div class="section-label" style="margin-bottom:10px;">Preview <span id="preview-count" style="font-weight:300;text-transform:none;letter-spacing:0;"></span></div>
+    <div class="preview-scroll" id="preview-list"></div>
+  </div>
+
+  <!-- Generate -->
+  <div id="btn-section" class="hidden">
+    <button class="generate-btn" id="generate-btn" onclick="generatePDF()">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <polyline points="7,10 12,15 17,10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download label PDF
+    </button>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:12px;">Your data never leaves your device — everything runs in the browser.</p>
+  </div>
+</main>
+
+<footer>Made for Sunshine Child &nbsp;·&nbsp; Runs entirely in your browser &nbsp;·&nbsp; No data is sent anywhere</footer>
+
+<script>
+let parsedRows = [];
+let headers = [];
+
+const dropZone = document.getElementById('drop-zone');
+const csvInput = document.getElementById('csv-input');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.csv')) processFile(f);
+  else alert('Please drop a .csv file.');
+});
+csvInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => parseCSV(e.target.result, file.name);
+  reader.readAsText(file);
+}
+
+function parseCSV(text, filename) {
+  const lines = text.trim().split('\n');
+  headers = splitCSVLine(lines[0]);
+  parsedRows = lines.slice(1).filter(l => l.trim()).map(l => {
+    const vals = splitCSVLine(l);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (vals[i] || '').trim().replace(/^"|"$/g, ''));
+    return obj;
+  });
+
+  dropZone.classList.add('loaded');
+  dropZone.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D8A5C" stroke-width="2" stroke-linecap="round"><polyline points="20,6 9,17 4,12"/></svg>
+      <span style="font-size:15px;font-weight:500;color:var(--success);">${filename}</span>
+      <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;" onclick="resetTool(event)">Change file</span>
+    </div>`;
+
+  populateSelects();
+  refreshAll();
+  show('mapping-section');
+  show('stats-section');
+  show('btn-section');
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+const fieldHints = {
+  'col-name':    ['shipping name','ship name','recipient name'],
+  'col-addr1':   ['shipping address 1','ship address 1','address 1','address line 1','street address','address'],
+  'col-addr2':   ['shipping address 2','ship address 2','address 2','address line 2','apt','suite'],
+  'col-city':    ['shipping city','ship city','city','town'],
+  'col-state':   ['shipping state','ship state','county','state','province','region'],
+  'col-zip':     ['shipping zip','shipping postcode','postcode','zip','postal code','post code'],
+  'col-country': ['shipping country','ship country','country'],
+  'col-order':   ['order number','order #','order id','order_number','number','order']
+};
+
+function populateSelects() {
+  const blank = '<option value="">— skip —</option>';
+  Object.entries(fieldHints).forEach(([id, hints]) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = blank + headers.map(h => `<option value="${h}">${h}</option>`).join('');
+    const match = headers.find(h => hints.some(hint => h.toLowerCase().includes(hint)));
+    if (match) sel.value = match;
+    sel.addEventListener('change', refreshAll);
+  });
+}
+
+function getVal(row, selId) {
+  const sel = document.getElementById(selId);
+  return sel && sel.value ? (row[sel.value] || '').trim() : '';
+}
+
+function buildAddress(row) {
+  const name    = getVal(row, 'col-name');
+  const addr1   = getVal(row, 'col-addr1');
+  const addr2   = getVal(row, 'col-addr2');
+  const city    = getVal(row, 'col-city');
+  const state   = getVal(row, 'col-state');
+  const zip     = getVal(row, 'col-zip');
+  const country = getVal(row, 'col-country');
+  const order   = getVal(row, 'col-order');
+  const lines   = [name, addr1, addr2, city, [state, zip].filter(Boolean).join('  '), country].filter(Boolean);
+  return { lines, order };
+}
+
+function refreshAll() {
+  const valid   = parsedRows.filter(r => buildAddress(r).lines.length >= 2);
+  const invalid = parsedRows.length - valid.length;
+
+  document.getElementById('stat-orders').textContent  = parsedRows.length;
+  document.getElementById('stat-labels').textContent  = valid.length;
+  document.getElementById('stat-skipped').textContent = invalid;
+
+  const warnBox = document.getElementById('warn-box');
+  if (invalid > 0) {
+    warnBox.classList.remove('hidden');
+    warnBox.textContent = `${invalid} row${invalid > 1 ? 's' : ''} skipped — address fields appear empty. Check the column mapping above.`;
+  } else {
+    warnBox.classList.add('hidden');
+  }
+
+  const list = document.getElementById('preview-list');
+  const previewCount = document.getElementById('preview-count');
+  if (valid.length) {
+    show('preview-section');
+    const shown = valid.slice(0, 6);
+    previewCount.textContent = `(showing ${shown.length} of ${valid.length})`;
+    list.innerHTML = shown.map(r => {
+      const { lines, order } = buildAddress(r);
+      return `<div class="addr-card">
+        ${order ? `<div class="addr-order">Order ${order}</div>` : ''}
+        <div class="addr-name">${lines[0] || ''}</div>
+        ${lines.slice(1).map(l => `<div>${l}</div>`).join('')}
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('preview-section').classList.add('hidden');
+  }
+
+  document.getElementById('generate-btn').disabled = valid.length === 0;
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const valid = parsedRows.filter(r => buildAddress(r).lines.length >= 2);
+  if (!valid.length) return;
+
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;stroke:var(--sun);stroke-width:1.8;animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-dasharray="60" stroke-dashoffset="15"/></svg> Generating…`;
+
+  setTimeout(() => {
+    const mmW = 150, mmH = 100;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [mmH, mmW] });
+
+    valid.forEach((row, i) => {
+      if (i > 0) doc.addPage([mmH, mmW]);
+      const { lines, order } = buildAddress(row);
+
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, mmW, mmH, 'F');
+
+      const marginL = 12;
+      const marginR = 12;
+      const usableW = mmW - marginL - marginR;
+      let y = 18;
+
+      if (order) {
+        doc.setFontSize(7);
+        doc.setTextColor(180, 175, 168);
+        doc.setFont('helvetica', 'normal');
+        doc.text('ORDER ' + order, marginL, y);
+        y += 10;
+      } else {
+        y += 4;
+      }
+
+      doc.setTextColor(26, 23, 20);
+      lines.forEach((line, li) => {
+        if (li === 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(16);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(13);
+        }
+        doc.text(line, marginL, y, { maxWidth: usableW });
+        y += li === 0 ? 15 : 9;
+      });
+
+      doc.setFontSize(7);
+      doc.setTextColor(200, 195, 185);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Sunshine Child', mmW - marginR, mmH - 8, { align: 'right' });
+    });
+
+    const date = new Date().toISOString().slice(0, 10);
+    doc.save(`sunshine-child-labels-${date}.pdf`);
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;stroke:var(--sun);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download label PDF`;
+  }, 50);
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+
+function resetTool(e) {
+  e.stopPropagation();
+  parsedRows = []; headers = [];
+  dropZone.classList.remove('loaded');
+  dropZone.innerHTML = `
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:var(--muted);">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/>
+        <polyline points="9,15 12,12 15,15"/>
+      </svg>
+    </div>
+    <div class="drop-title">Drop your CSV file here</div>
+    <div class="drop-sub">or <span class="drop-link">browse to select a file</span></div>
+    <input type="file" id="csv-input" accept=".csv" style="display:none">`;
+  document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+  ['mapping-section','stats-section','preview-section','btn-section','warn-box'].forEach(id => document.getElementById(id).classList.add('hidden'));
+}
+
+const style = document.createElement('style');
+style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
